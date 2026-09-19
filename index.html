@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>List</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --text: #1a1a1a;
+    --muted: #9a9a9a;
+    --line: #ececec;
+    --accent: #1a1a1a;
+  }
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  html, body {
+    height: 100%;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    display: flex;
+    justify-content: center;
+    padding: 64px 20px;
+  }
+
+  .app {
+    width: 100%;
+    max-width: 520px;
+  }
+
+  h1 {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 32px;
+  }
+
+  form {
+    display: flex;
+    gap: 10px;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 16px;
+    margin-bottom: 8px;
+  }
+
+  input {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 16px;
+    color: var(--text);
+    padding: 8px 0;
+  }
+
+  input::placeholder {
+    color: #c8c8c8;
+  }
+
+  button.add {
+    border: 1px solid var(--accent);
+    background: transparent;
+    color: var(--text);
+    font-size: 14px;
+    padding: 0 20px;
+    cursor: pointer;
+    border-radius: 999px;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+
+  button.add:hover {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  ul {
+    list-style: none;
+  }
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 2px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .check {
+    width: 22px;
+    height: 22px;
+    border: 1.5px solid #d0d0d0;
+    border-radius: 50%;
+    cursor: pointer;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    transition: all 0.15s ease;
+  }
+
+  .check:hover {
+    border-color: var(--accent);
+  }
+
+  .check svg {
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+
+  li.done .check {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  li.done .check svg {
+    opacity: 1;
+  }
+
+  .text {
+    flex: 1;
+    font-size: 16px;
+    line-height: 1.4;
+    word-break: break-word;
+    transition: color 0.15s ease;
+  }
+
+  li.done .text {
+    color: var(--muted);
+    text-decoration: line-through;
+  }
+
+  .remove {
+    border: none;
+    background: transparent;
+    color: #c8c8c8;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 4px 6px;
+    flex-shrink: 0;
+    opacity: 0;
+    transition: opacity 0.15s ease, color 0.15s ease;
+  }
+
+  li:hover .remove {
+    opacity: 1;
+  }
+
+  .remove:hover {
+    color: #1a1a1a;
+  }
+
+  .empty {
+    text-align: center;
+    color: #c8c8c8;
+    font-size: 14px;
+    padding: 48px 0;
+  }
+</style>
+</head>
+<body>
+  <div class="app">
+    <h1>List</h1>
+
+    <form id="form" autocomplete="off">
+      <input id="input" type="text" placeholder="Add an item…" maxlength="200" />
+      <button class="add" type="submit">Add</button>
+    </form>
+
+    <ul id="list"></ul>
+    <p class="empty" id="empty">Nothing here yet.</p>
+  </div>
+
+  <script>
+    const form = document.getElementById('form');
+    const input = document.getElementById('input');
+    const list = document.getElementById('list');
+    const empty = document.getElementById('empty');
+
+    const STORAGE_KEY = 'list-maker.items';
+
+    function save() {
+      const items = [...list.children].map((li) => ({
+        text: li.querySelector('.text').textContent,
+        done: li.classList.contains('done')
+      }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    }
+
+    function load() {
+      let items;
+      try {
+        items = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+      } catch (e) {
+        items = [];
+      }
+      items.forEach((item) => addItem(item.text, item.done, false));
+      renderEmpty();
+    }
+
+    function renderEmpty() {
+      empty.style.display = list.children.length === 0 ? 'block' : 'none';
+    }
+
+    function addItem(text, done = false, persist = true) {
+      const li = document.createElement('li');
+      if (done) li.classList.add('done');
+
+
+      const check = document.createElement('button');
+      check.className = 'check';
+      check.type = 'button';
+      check.setAttribute('aria-label', 'Toggle item');
+      check.innerHTML =
+        '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" ' +
+        'stroke="#ffffff" stroke-width="3.5" stroke-linecap="round" ' +
+        'stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+
+
+      const span = document.createElement('span');
+      span.className = 'text';
+      span.textContent = text;
+
+
+      const remove = document.createElement('button');
+      remove.className = 'remove';
+      remove.type = 'button';
+      remove.setAttribute('aria-label', 'Remove item');
+      remove.innerHTML = '&times;';
+
+      check.addEventListener('click', () => {
+        li.classList.toggle('done');
+        save();
+      });
+      remove.addEventListener('click', () => {
+        li.remove();
+        save();
+        renderEmpty();
+      });
+
+      li.append(check, span, remove);
+      list.appendChild(li);
+      if (persist) save();
+      renderEmpty();
+    }
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const value = input.value.trim();
+      if (!value) return;
+      addItem(value);
+      input.value = '';
+      input.focus();
+    });
+
+    load();
+  </script>
+</body>
+</html>
